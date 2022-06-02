@@ -1,0 +1,34 @@
+import com.spirytusz.buildsrc.Dependencies
+
+plugins {
+    id("kotlin")
+    id("java-gradle-plugin")
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation Dependencies.agp
+    implementation Dependencies.asm
+    implementation Dependencies.kotlin_stdlib
+    implementation Dependencies.gson
+    implementation Dependencies.common_codec
+    implementation Dependencies.common_io
+    implementation project(":base-plugin")
+}
+
+gradlePlugin {
+    plugins {
+        spiWeaver {
+            id = 'com.spirytus.spi.weaver'
+            implementationClass = 'com.spirytusz.spi.weaver.transform.ServiceProviderWeaverPlugin'
+        }
+    }
+}
+
+java {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}
+
+group = "com.spirytusz"

@@ -12,15 +12,13 @@ buildscript {
     }
 }
 
-plugins {
-    id 'com.spirytus.spi.weaver' apply false
-}
-
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
+
+    version = "0.0.1"
 }
 
 task clean(type: Delete) {

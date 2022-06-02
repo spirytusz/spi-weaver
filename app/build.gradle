@@ -3,6 +3,7 @@ import com.spirytusz.buildsrc.Dependencies
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.spirytus.spi.weaver'
 }
 
 android {
@@ -31,6 +32,11 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+}
+
+spi {
+    debuggable true
+    blackListClasses = ['^com/google', "^android", "^org/jetbrains", "^kotlin", "^java", "R\$|R\\\$[a-z]+"]
 }
 
 dependencies {
