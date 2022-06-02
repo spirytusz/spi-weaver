@@ -1,0 +1,24 @@
+import com.spirytusz.buildsrc.Dependencies
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath Dependencies.agp
+        classpath Dependencies.kotlin_gradle_plugin
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

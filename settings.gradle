@@ -1,0 +1,4 @@
+rootProject.name = "spi-weaver"
+include ':app'
+include ':spi-weaver-runtime'
+include ':spi-weaver-stub'
