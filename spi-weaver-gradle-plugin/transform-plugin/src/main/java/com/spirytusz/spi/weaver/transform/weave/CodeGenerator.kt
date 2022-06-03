@@ -25,24 +25,33 @@ class CodeGenerator(
             impls.forEach { impl ->
                 val (creatorName, byteArray) = CallableClassByteCodeGenerator.generate(impl.className)
                 val dir = transformInvocation.outputProvider.getContentLocation(
-                    DigestUtils.md2Hex(impl.toString()) + FileConst.CLASS_FILE_SUFFIX,
+                    DigestUtils.md5Hex(impl.toString()) + FileConst.CLASS_FILE_SUFFIX,
                     mutableSetOf<QualifiedContent.ContentType>(QualifiedContent.DefaultContentType.CLASSES),
                     mutableSetOf(QualifiedContent.Scope.PROJECT),
                     Format.DIRECTORY
                 )
-                val file = File(dir, namingCreatorClassFile(creatorName))
+                val file = File(dir, namingClassFile(creatorName))
                 file.safelyWriteBytes(byteArray)
-                Logger.i(TAG) { "transform() >>> write creator $creatorName to $file" }
+                Logger.i(TAG) { "generateServiceImplCreators() >>> write creator $creatorName to $file" }
             }
         }
     }
 
-    fun generateServicePool() {
-
+    fun generateServiceRegistry() {
+        val (className, byteArray) = ServiceRegistryByteCodeGenerator.generate(serviceMapping)
+        val dir = transformInvocation.outputProvider.getContentLocation(
+            DigestUtils.md5Hex(className) + FileConst.CLASS_FILE_SUFFIX,
+            mutableSetOf<QualifiedContent.ContentType>(QualifiedContent.DefaultContentType.CLASSES),
+            mutableSetOf(QualifiedContent.Scope.PROJECT),
+            Format.DIRECTORY
+        )
+        val file = File(dir, namingClassFile(className))
+        file.safelyWriteBytes(byteArray)
+        Logger.i(TAG) { "generateServiceRegistry() >>> write $className $className to $file" }
     }
 
-    private fun namingCreatorClassFile(creatorName: String): String {
-        val name = DigestUtils.md5Hex(creatorName.replace("/", "_"))
+    private fun namingClassFile(className: String): String {
+        val name = DigestUtils.md5Hex(className.replace("/", "_"))
         return name + FileConst.CLASS_FILE_SUFFIX
     }
 }

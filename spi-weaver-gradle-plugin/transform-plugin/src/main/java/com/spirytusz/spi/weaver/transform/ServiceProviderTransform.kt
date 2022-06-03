@@ -54,7 +54,7 @@ class ServiceProviderTransform(
         }
         val codeGenerator = CodeGenerator(transformInvocation, serviceMapping)
         codeGenerator.generateServiceImplCreators()
-        codeGenerator.generateServicePool()
+        codeGenerator.generateServiceRegistry()
     }
 
 }
