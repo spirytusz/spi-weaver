@@ -63,37 +63,28 @@ class InputScanner(private val project: Project, private val configProvider: Con
                     Format.DIRECTORY
                 )
                 if (incremental) {
-                    directoryInput.changedFiles.filter { (file, _) ->
-                        file.isClassFile()
-                    }.forEach { (classFile, status) ->
+                    directoryInput.changedFiles.filter { (file, status) ->
+                        file.isClassFile() && status == Status.REMOVED
+                    }.forEach { (classFile, _) ->
                         val className = classFile.relativeFile(directoryInput.file).path
                         val dstFile = File(
                             dstDirectory,
                             className.computeDstFileName() + CLASS_FILE_SUFFIX
                         )
-                        if (status == Status.REMOVED) {
-                            dstFile.safelyDelete()
-                        } else {
-                            classFile.safelyCopyFile(dstFile)
-                            targetClassCollector.collectForClassFile(
-                                className,
-                                classFile.inputStream()
-                            )
-                        }
+                        dstFile.safelyDelete()
                     }
-                } else {
-                    directoryInput.file.walkTopDown().filter {
-                        it.isClassFile()
-                    }.forEach { classFile ->
-                        val className = classFile.relativeFile(directoryInput.file).path
-                        Logger.d(TAG) { "className=$className" }
-                        val dstFile = File(
-                            dstDirectory,
-                            className.computeDstFileName() + CLASS_FILE_SUFFIX
-                        )
-                        classFile.safelyCopyFile(dstFile)
-                        targetClassCollector.collectForClassFile(className, classFile.inputStream())
-                    }
+                }
+                directoryInput.file.walkTopDown().filter {
+                    it.isClassFile()
+                }.forEach { classFile ->
+                    val className = classFile.relativeFile(directoryInput.file).path
+                    Logger.d(TAG) { "className=$className" }
+                    val dstFile = File(
+                        dstDirectory,
+                        className.computeDstFileName() + CLASS_FILE_SUFFIX
+                    )
+                    classFile.safelyCopyFile(dstFile)
+                    targetClassCollector.collectForClassFile(className, classFile.inputStream())
                 }
             }
         }
