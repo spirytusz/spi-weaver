@@ -52,9 +52,7 @@ class ServiceProviderTransform(
             val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
             "serviceMapping: ${gson.toJson(serviceMapping)}"
         }
-        val codeGenerator = CodeGenerator(transformInvocation, serviceMapping)
-        codeGenerator.generateServiceImplCreators()
-        codeGenerator.generateServiceRegistry()
+        CodeGenerator(transformInvocation, serviceMapping).generate()
     }
 
 }

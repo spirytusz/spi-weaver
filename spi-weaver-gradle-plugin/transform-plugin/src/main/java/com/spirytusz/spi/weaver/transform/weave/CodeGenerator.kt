@@ -20,7 +20,15 @@ class CodeGenerator(
         private const val TAG = "CodeGenerator"
     }
 
-    fun generateServiceImplCreators() {
+    fun generate() {
+        val generateStart = System.currentTimeMillis()
+        generateServiceImplCreators()
+        generateServiceRegistry()
+        val generateEnd = System.currentTimeMillis()
+        Logger.i(TAG) { "generate() >>> generate end, time cost: [${generateEnd - generateStart}ms]" }
+    }
+
+    private fun generateServiceImplCreators() {
         serviceMapping.values.forEach { impls ->
             impls.forEach { impl ->
                 val (creatorName, byteArray) = CallableClassByteCodeGenerator.generate(impl.className)
@@ -37,7 +45,7 @@ class CodeGenerator(
         }
     }
 
-    fun generateServiceRegistry() {
+    private fun generateServiceRegistry() {
         val (className, byteArray) = ServiceRegistryByteCodeGenerator.generate(serviceMapping)
         val dir = transformInvocation.outputProvider.getContentLocation(
             DigestUtils.md5Hex(className) + FileConst.CLASS_FILE_SUFFIX,
@@ -47,7 +55,7 @@ class CodeGenerator(
         )
         val file = File(dir, namingClassFile(className))
         file.safelyWriteBytes(byteArray)
-        Logger.i(TAG) { "generateServiceRegistry() >>> write $className $className to $file" }
+        Logger.i(TAG) { "generateServiceRegistry() >>> write $className to $file" }
     }
 
     private fun namingClassFile(className: String): String {
