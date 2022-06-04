@@ -5,7 +5,6 @@ import com.spirytusz.spi.weaver.config.FileConst.CLASS_FILE_SUFFIX
 import com.spirytusz.spi.weaver.config.QualifiedNames.SERVICE_ANNOTATION_QUALIFIED_NAME
 import com.spirytusz.spi.weaver.config.QualifiedNames.SERVICE_IMPL_ANNOTATION_QUALIFIED_NAME
 import com.spirytusz.spi.weaver.extensions.toQualifiedName
-import com.spirytusz.spi.weaver.log.Logger
 import com.spirytusz.spi.weaver.transform.data.ServiceImplInfo
 import com.spirytusz.spi.weaver.transform.data.ServiceInfo
 import org.objectweb.asm.AnnotationVisitor
@@ -19,69 +18,59 @@ class TargetClassCollector(private val classFilter: ClassFilter) {
 
     companion object {
         private const val SERVICE_IMPL_ALIAS = "alias"
-
-        private const val TAG = "TargetClassCollector"
     }
 
     private val classVisitor = ScanClassVisitor()
 
-    private val _serviceInfoList = mutableListOf<ServiceInfo>()
-    private val _serviceImplInfoList = mutableListOf<ServiceImplInfo>()
-
-    val serviceInfoList: List<ServiceInfo> = _serviceInfoList
-    val serviceImplInfoList: List<ServiceImplInfo> = _serviceImplInfoList
-
     fun collectForJarInput(
         jarInput: JarInput
-    ) {
-        val jarFile = JarFile(jarInput.file)
-        jarFile.entries().iterator().forEach loop@{ jarEntry ->
-            if (!jarEntry.name.endsWith(CLASS_FILE_SUFFIX)) {
-                return@loop
+    ): List<Any> {
+        return JarFile(jarInput.file).use { jarFile ->
+            jarFile.entries().toList().mapNotNull loop@{ jarEntry ->
+                if (!jarEntry.name.endsWith(CLASS_FILE_SUFFIX)) {
+                    return@loop null
+                } else {
+                    collectForClassFile(
+                        jarEntry.name,
+                        jarFile.getInputStream(jarEntry)
+                    )
+                }
             }
-            collectForClassFile(
-                jarEntry.name,
-                jarFile.getInputStream(jarEntry)
-            )
         }
-        jarFile.close()
     }
 
     fun collectForClassFile(
         className: String,
         inputStream: InputStream
-    ) {
+    ): Any? {
         val clazz = if (className.endsWith(CLASS_FILE_SUFFIX)) {
             className.replace(CLASS_FILE_SUFFIX, "")
         } else {
             className
         }
         if (!classFilter(clazz)) {
-            return
+            return null
         }
         classVisitor.reset()
 
         val classReader = ClassReader(inputStream)
         classReader.accept(classVisitor, ClassReader.EXPAND_FRAMES)
-        processScanResult(clazz)
+        return processScanResult(clazz)
     }
 
-    private fun processScanResult(className: String) {
-        when {
+    private fun processScanResult(className: String): Any? {
+        return when {
             classVisitor.isServiceClass -> {
-                val serviceInfo = ServiceInfo(className = className)
-                _serviceInfoList.add(serviceInfo)
-                Logger.d(TAG) { "processScanResult() >>> find service class: $serviceInfo" }
+                ServiceInfo(className = className)
             }
             classVisitor.isServiceImplClass -> {
-                val serviceImplInfo = ServiceImplInfo(
+                ServiceImplInfo(
                     implements = classVisitor.implements!!,
                     alias = classVisitor.serviceImplAlias!!,
                     className = className
                 )
-                _serviceImplInfoList.add(serviceImplInfo)
-                Logger.d(TAG) { "processScanResult() >>> find service impl class: $serviceImplInfo" }
             }
+            else -> null
         }
     }
 

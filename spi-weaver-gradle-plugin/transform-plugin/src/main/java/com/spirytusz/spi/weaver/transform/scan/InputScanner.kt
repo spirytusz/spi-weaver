@@ -1,22 +1,19 @@
 package com.spirytusz.spi.weaver.transform.scan
 
-import com.android.build.api.transform.Format
-import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import com.spirytusz.spi.weaver.config.ConfigProvider
-import com.spirytusz.spi.weaver.config.FileConst.CLASS_FILE_SUFFIX
 import com.spirytusz.spi.weaver.log.Logger
 import com.spirytusz.spi.weaver.transform.data.ServiceImplInfo
 import com.spirytusz.spi.weaver.transform.data.ServiceInfo
-import com.spirytusz.spi.weaver.transform.extensions.isClassFile
-import com.spirytusz.spi.weaver.transform.extensions.relativeFile
-import com.spirytusz.spi.weaver.transform.extensions.safelyCopyFile
-import com.spirytusz.spi.weaver.transform.extensions.safelyDelete
-import org.apache.commons.codec.digest.DigestUtils
+import com.spirytusz.spi.weaver.transform.scan.base.IInputScanner
+import com.spirytusz.spi.weaver.transform.scan.base.InputScannerDispatcher
+import com.spirytusz.spi.weaver.transform.scan.directory.FullDirectoryInputScanner
+import com.spirytusz.spi.weaver.transform.scan.directory.IncrementalDirectoryInputScanner
+import com.spirytusz.spi.weaver.transform.scan.jar.FullJarInputScanner
+import com.spirytusz.spi.weaver.transform.scan.jar.IncrementalJarInputScanner
 import org.gradle.api.Project
-import java.io.File
 
-class InputScanner(private val project: Project, private val configProvider: ConfigProvider) {
+class InputScanner(private val project: Project, configProvider: ConfigProvider) : IInputScanner {
 
     companion object {
         private const val TAG = "InputScanner"
@@ -24,13 +21,28 @@ class InputScanner(private val project: Project, private val configProvider: Con
 
     private val targetClassCollector = TargetClassCollector(ClassFilter(configProvider))
 
-    val serviceMapping: Map<ServiceInfo, List<ServiceImplInfo>>
-        get() = computeServiceImplRelationship()
+    private val jarInputScanner by lazy {
+        InputScannerDispatcher(
+            incrementalScanner = IncrementalJarInputScanner(targetClassCollector),
+            fullScanner = FullJarInputScanner(targetClassCollector)
+        )
+    }
 
-    fun onReceiveInput(transformInvocation: TransformInvocation) {
-        Logger.i(TAG) { "onReceiveInput() >>> scan start, isIncremental=${transformInvocation.isIncremental}" }
+    private val directoryInputScanner by lazy {
+        InputScannerDispatcher(
+            incrementalScanner = IncrementalDirectoryInputScanner(targetClassCollector),
+            fullScanner = FullDirectoryInputScanner(targetClassCollector)
+        )
+    }
+
+    override val serviceMapping: Map<ServiceInfo, List<ServiceImplInfo>>
+        get() = mergeServiceMapping()
+
+    override fun onReceiveInput(transformInvocation: TransformInvocation) {
+        Logger.i(TAG) {
+            "onReceiveInput() >>> scan start, isIncremental=${transformInvocation.isIncremental}"
+        }
         val scanStart = System.currentTimeMillis()
-        val transformInputs = transformInvocation.inputs
         val incremental = transformInvocation.isIncremental
         val outputProvider = transformInvocation.outputProvider
 
@@ -38,76 +50,17 @@ class InputScanner(private val project: Project, private val configProvider: Con
             outputProvider.deleteAll()
         }
 
-        transformInputs.forEach { transformInput ->
-            transformInput.jarInputs.forEach { jarInput ->
-                Logger.d(TAG) { "JarInput: ${jarInput.file.absoluteFile}" }
-                val dstFile = outputProvider.getContentLocation(
-                    jarInput.name.computeDstFileName(),
-                    jarInput.contentTypes,
-                    jarInput.scopes,
-                    Format.JAR
-                )
-                if (incremental && jarInput.status == Status.REMOVED) {
-                    dstFile.deleteOnExit()
-                } else {
-                    jarInput.file.safelyCopyFile(dstFile)
-                    targetClassCollector.collectForJarInput(jarInput)
-                }
-            }
-            transformInput.directoryInputs.forEach { directoryInput ->
-                Logger.d(TAG) { "DirectoryInput: ${directoryInput.file.absoluteFile}" }
-                val dstDirectory = outputProvider.getContentLocation(
-                    directoryInput.name.computeDstFileName(),
-                    directoryInput.contentTypes,
-                    directoryInput.scopes,
-                    Format.DIRECTORY
-                )
-                if (incremental) {
-                    directoryInput.changedFiles.filter { (file, status) ->
-                        file.isClassFile() && status == Status.REMOVED
-                    }.forEach { (classFile, _) ->
-                        val className = classFile.relativeFile(directoryInput.file).path
-                        val dstFile = File(
-                            dstDirectory,
-                            className.computeDstFileName() + CLASS_FILE_SUFFIX
-                        )
-                        dstFile.safelyDelete()
-                    }
-                }
-                directoryInput.file.walkTopDown().filter {
-                    it.isClassFile()
-                }.forEach { classFile ->
-                    val className = classFile.relativeFile(directoryInput.file).path
-                    Logger.d(TAG) { "className=$className" }
-                    val dstFile = File(
-                        dstDirectory,
-                        className.computeDstFileName() + CLASS_FILE_SUFFIX
-                    )
-                    classFile.safelyCopyFile(dstFile)
-                    targetClassCollector.collectForClassFile(className, classFile.inputStream())
-                }
-            }
-        }
+        jarInputScanner.onReceiveInput(transformInvocation)
+        directoryInputScanner.onReceiveInput(transformInvocation)
+
         val scanEnd = System.currentTimeMillis()
         Logger.i(TAG) { "onReceiveInput() >>> scan end, time cost: [${scanEnd - scanStart}ms]" }
     }
 
-    private fun String.computeDstFileName(): String {
-        return DigestUtils.md5Hex(this)
-    }
-
-    private fun computeServiceImplRelationship(): Map<ServiceInfo, List<ServiceImplInfo>> {
-        val serviceInfoList = targetClassCollector.serviceInfoList
-        val serviceImplInfoList = targetClassCollector.serviceImplInfoList
-        return serviceInfoList.mapNotNull { serviceInfo ->
-            val serviceInfoImpls = serviceImplInfoList.filter {
-                it.implements.contains(serviceInfo.className)
-            }
-            if (serviceInfoImpls.isNotEmpty()) {
-                serviceInfo to serviceInfoImpls
-            } else {
-                null
-            }
-        }.toMap()
+    private fun mergeServiceMapping(): Map<ServiceInfo, List<ServiceImplInfo>> {
+        val result = mutableMapOf<ServiceInfo, List<ServiceImplInfo>>()
+        result.putAll(jarInputScanner.serviceMapping)
+        result.putAll(directoryInputScanner.serviceMapping)
+        return result.toMap()
     }
 }
