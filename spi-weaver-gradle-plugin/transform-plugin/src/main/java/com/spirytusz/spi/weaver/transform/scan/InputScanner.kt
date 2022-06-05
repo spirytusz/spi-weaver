@@ -3,6 +3,7 @@ package com.spirytusz.spi.weaver.transform.scan
 import com.android.build.api.transform.TransformInvocation
 import com.spirytusz.spi.weaver.config.ConfigProvider
 import com.spirytusz.spi.weaver.log.Logger
+import com.spirytusz.spi.weaver.transform.cache.CacheManager
 import com.spirytusz.spi.weaver.transform.data.ServiceImplInfo
 import com.spirytusz.spi.weaver.transform.data.ServiceInfo
 import com.spirytusz.spi.weaver.transform.scan.base.IInputScanner
@@ -13,25 +14,29 @@ import com.spirytusz.spi.weaver.transform.scan.jar.FullJarInputScanner
 import com.spirytusz.spi.weaver.transform.scan.jar.IncrementalJarInputScanner
 import org.gradle.api.Project
 
-class InputScanner(private val project: Project, configProvider: ConfigProvider) : IInputScanner {
+class InputScanner(project: Project, configProvider: ConfigProvider) : IInputScanner {
 
     companion object {
         private const val TAG = "InputScanner"
     }
 
     private val targetClassCollector = TargetClassCollector(ClassFilter(configProvider))
+    private val cacheHelper = CacheManager(project)
 
     private val jarInputScanner by lazy {
         InputScannerDispatcher(
-            incrementalScanner = IncrementalJarInputScanner(targetClassCollector),
-            fullScanner = FullJarInputScanner(targetClassCollector)
+            incrementalScanner = IncrementalJarInputScanner(targetClassCollector, cacheHelper),
+            fullScanner = FullJarInputScanner(targetClassCollector, cacheHelper)
         )
     }
 
     private val directoryInputScanner by lazy {
         InputScannerDispatcher(
-            incrementalScanner = IncrementalDirectoryInputScanner(targetClassCollector),
-            fullScanner = FullDirectoryInputScanner(targetClassCollector)
+            incrementalScanner = IncrementalDirectoryInputScanner(
+                targetClassCollector,
+                cacheHelper
+            ),
+            fullScanner = FullDirectoryInputScanner(targetClassCollector, cacheHelper)
         )
     }
 
@@ -43,6 +48,7 @@ class InputScanner(private val project: Project, configProvider: ConfigProvider)
             "onReceiveInput() >>> scan start, isIncremental=${transformInvocation.isIncremental}"
         }
         val scanStart = System.currentTimeMillis()
+        cacheHelper.init(transformInvocation)
         val incremental = transformInvocation.isIncremental
         val outputProvider = transformInvocation.outputProvider
 
@@ -52,6 +58,8 @@ class InputScanner(private val project: Project, configProvider: ConfigProvider)
 
         jarInputScanner.onReceiveInput(transformInvocation)
         directoryInputScanner.onReceiveInput(transformInvocation)
+
+        cacheHelper.apply()
 
         val scanEnd = System.currentTimeMillis()
         Logger.i(TAG) { "onReceiveInput() >>> scan end, time cost: [${scanEnd - scanStart}ms]" }

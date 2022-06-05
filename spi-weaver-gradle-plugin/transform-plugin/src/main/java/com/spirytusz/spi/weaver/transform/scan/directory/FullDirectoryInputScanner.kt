@@ -6,6 +6,7 @@ import com.android.build.api.transform.TransformInvocation
 import com.android.build.api.transform.TransformOutputProvider
 import com.spirytusz.spi.weaver.config.FileConst
 import com.spirytusz.spi.weaver.log.Logger
+import com.spirytusz.spi.weaver.transform.cache.CacheManager
 import com.spirytusz.spi.weaver.transform.data.ServiceImplInfo
 import com.spirytusz.spi.weaver.transform.data.ServiceInfo
 import com.spirytusz.spi.weaver.transform.extensions.isClassFile
@@ -16,7 +17,8 @@ import com.spirytusz.spi.weaver.transform.scan.base.AbstractInputScanner
 import java.io.File
 
 class FullDirectoryInputScanner(
-    private val targetClassCollector: TargetClassCollector
+    private val targetClassCollector: TargetClassCollector,
+    private val cacheManager: CacheManager
 ) : AbstractInputScanner() {
 
     companion object {
@@ -51,13 +53,16 @@ class FullDirectoryInputScanner(
                 className.computeDstFileName() + FileConst.CLASS_FILE_SUFFIX
             )
             targetClassCollector.collectForClassFile(className, classFile.inputStream())?.let {
+                val path = classFile.absolutePath
                 when (it) {
                     is ServiceInfo -> {
                         Logger.d(TAG) { "scanDirectoryInput() >>> find service ${it.className}" }
+                        cacheManager.insertByPath(path, service = it)
                         serviceInfoList.add(it)
                     }
                     is ServiceImplInfo -> {
                         Logger.d(TAG) { "scanDirectoryInput() >>> find service impl ${it.alias} ${it.className}" }
+                        cacheManager.insertByPath(path, impl = it)
                         serviceImplInfoList.add(it)
                     }
                     else -> {

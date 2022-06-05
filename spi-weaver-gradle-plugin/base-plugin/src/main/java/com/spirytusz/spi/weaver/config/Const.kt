@@ -8,8 +8,10 @@ object QualifiedNames {
         "com.spirytusz.spi.weaver.runtime.annotation.ServiceImpl"
 }
 
-object Constants {
+object Caches {
     const val INTERMEDIATES = "intermediates"
+    const val CACHE_FOLDER = "spi-weaver"
+    const val CACHE_FILE_NAME = "spi-weaver-cache.json"
 }
 
 object FileConst {

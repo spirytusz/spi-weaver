@@ -37,6 +37,7 @@ class ServiceProviderTransform(
     }
 
     override fun transform(transformInvocation: TransformInvocation?) {
+        val start = System.currentTimeMillis()
         if (transformInvocation == null) {
             Logger.e(TAG) { "transform() >>> transformInvocation is null" }
             throw IllegalArgumentException("transformInvocation is null")
@@ -53,6 +54,8 @@ class ServiceProviderTransform(
             "serviceMapping: ${gson.toJson(serviceMapping)}"
         }
         CodeGenerator(transformInvocation, serviceMapping).generate()
+        val end = System.currentTimeMillis()
+        Logger.i(TAG) { "transform time cost [${end - start}]ms" }
     }
 
 }
