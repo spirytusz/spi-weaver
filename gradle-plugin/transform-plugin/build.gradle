@@ -3,6 +3,7 @@ import com.spirytusz.buildsrc.Dependencies
 plugins {
     id("kotlin")
     id("java-gradle-plugin")
+    id("maven-publish-plugin")
 }
 
 dependencies {

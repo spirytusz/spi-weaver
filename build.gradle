@@ -21,6 +21,11 @@ allprojects {
     }
 }
 
+subprojects {
+    group ext["GROUP"]
+    version ext["VERSION"]
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
