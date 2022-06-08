@@ -1,3 +1,0 @@
-rootProject.name = "spi-weaver-gradle-plugin"
-include ':transform-plugin'
-include ':base-plugin'

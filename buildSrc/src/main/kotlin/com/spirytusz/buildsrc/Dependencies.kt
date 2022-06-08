@@ -10,6 +10,9 @@ object Versions {
     const val glide = "4.13.0"
     const val asm = "9.1"
     const val junit = "4.12"
+    const val gson = "2.8.6"
+    const val common_codec = "1.15"
+    const val common_io = "2.6"
 }
 
 object Dependencies {
@@ -26,4 +29,7 @@ object Dependencies {
     const val glide = "com.github.bumptech.glide:glide:${Versions.glide}"
     const val asm = "org.ow2.asm:asm-commons:${Versions.asm}"
     const val junit = "junit:junit:${Versions.junit}"
+    const val gson = "com.google.code.gson:gson:${Versions.gson}"
+    const val common_codec = "commons-codec:commons-codec:${Versions.common_codec}"
+    const val common_io = "commons-io:commons-io:${Versions.common_io}"
 }

@@ -3,7 +3,7 @@ import com.spirytusz.buildsrc.Dependencies
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'com.spirytus.spi.weaver'
+    id 'com.spirytusz.spi.weaver'
 }
 
 android {

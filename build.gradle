@@ -4,16 +4,14 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        maven { url(project.file(".repo")) }
     }
 
     dependencies {
         classpath Dependencies.agp
         classpath Dependencies.kotlin_gradle_plugin
+        classpath "com.spirytusz:spi-compiler:0.0.1"
     }
-}
-
-plugins {
-    id 'com.spirytus.spi.weaver' apply false
 }
 
 allprojects {

@@ -14,13 +14,13 @@ dependencies {
     implementation Dependencies.gson
     implementation Dependencies.common_codec
     implementation Dependencies.common_io
-    implementation project(":base-plugin")
+    implementation project(":gradle-plugin:base-plugin")
 }
 
 gradlePlugin {
     plugins {
         spiWeaver {
-            id = 'com.spirytus.spi.weaver'
+            id = 'com.spirytusz.spi.weaver'
             implementationClass = 'com.spirytusz.spi.weaver.transform.ServiceProviderWeaverPlugin'
         }
     }
