@@ -2,16 +2,20 @@ import java.util.*
 
 plugins {
     `maven-publish`
+    `java-library`
     signing
 }
 
-val username = "ZSpirytus"
-val gitUrl = ""
-val siteUrl = ""
-val desc = ""
-val licenseName = ""
-val licenseUrl = ""
-val inception = "2022"
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+tasks.javadoc {
+    if (JavaVersion.current().isJava9Compatible) {
+        (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
+    }
+}
 
 ext["signing.keyId"] = null
 ext["signing.password"] = null
@@ -29,10 +33,6 @@ fun File.readAsProperties(): Properties {
 
 fun File.relativeTo(base: File): String {
     return toURI().relativize(base.toURI()).path
-}
-
-val javadocJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
 }
 
 val rootProjectLocalProperties: File = project.rootProject.file("local.properties")
@@ -54,9 +54,17 @@ if (!projectGradleProperties.exists()) {
 }
 val gradleProperties = projectGradleProperties.readAsProperties()
 
+val username = "ZSpirytus"
+val repoUrl = "https://github.com/spirytusz/spi-weaver"
+val myEmail = "zhangwel261717@gmail.com"
+val licenseName = ""
+val licenseUrl = ""
+val inception = "2022"
+
 val groupName: String = project.group.toString()
 val artifactName: String = gradleProperties.getProperty("ARTIFACT")
 val ver: String = project.version.toString()
+val desc: String = gradleProperties.getProperty("DESC") ?: ""
 
 publishing {
     publications {
@@ -64,7 +72,9 @@ publishing {
             groupId = groupName
             artifactId = artifactName
             version = ver
-            artifact(javadocJar.get())
+            if (!project.plugins.hasPlugin("java-gradle-plugin")) {
+                from(components["java"])
+            }
 
             pom {
                 name.set(artifactName)
@@ -74,7 +84,7 @@ publishing {
                 version = ver
 
                 description.set(desc)
-                url.set(siteUrl)
+                url.set(repoUrl)
                 inceptionYear.set(inception)
 
                 licenses {
@@ -86,12 +96,13 @@ publishing {
                 developers {
                     developer {
                         name.set(username)
+                        email.set(myEmail)
                     }
                 }
                 scm {
-                    connection.set(gitUrl)
-                    developerConnection.set(gitUrl)
-                    url.set(siteUrl)
+                    connection.set("scm:git:git:github.com/spirytusz/spi-weaver.git")
+                    developerConnection.set("scm:git:ssh:github.com/spirytusz/spi-weaver.git")
+                    url.set(repoUrl)
                 }
             }
         }
