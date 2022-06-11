@@ -1,5 +1,5 @@
 rootProject.name = "spi-weaver"
-include ':app'
+include ':demo'
 include ':spi-weaver-runtime'
 include ':spi-weaver-stub'
 include ':gradle-plugin:base-plugin'

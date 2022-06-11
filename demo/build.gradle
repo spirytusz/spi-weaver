@@ -9,6 +9,10 @@ plugins {
 android {
     compileSdk 31
 
+    dataBinding {
+        enabled = true
+    }
+
     defaultConfig {
         applicationId "com.spirytusz.spi.demo"
         minSdk 21
@@ -47,7 +51,7 @@ dependencies {
     implementation Dependencies.material_design
     implementation Dependencies.androidx_constraintlayout
     implementation Dependencies.glide
-    implementation project(":spi-weaver-runtime")
+    implementation Dependencies.spi_weaver_runtime
 
     testImplementation Dependencies.junit
     testImplementation Dependencies.asm

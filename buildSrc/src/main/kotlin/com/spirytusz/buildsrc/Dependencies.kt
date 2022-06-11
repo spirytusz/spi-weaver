@@ -14,6 +14,7 @@ object Versions {
     const val common_codec = "1.15"
     const val common_io = "2.6"
     const val booster = "1.3.0"
+    const val spi_weaver = "0.0.1"
 }
 
 object Dependencies {
@@ -35,4 +36,7 @@ object Dependencies {
     const val common_io = "commons-io:commons-io:${Versions.common_io}"
     const val booster_annotation = "com.spirytusz:booster-annotation:${Versions.booster}"
     const val booster_processor = "com.spirytusz:booster-processor:${Versions.booster}"
+
+    const val spi_weaver_compiler = "com.spirytusz:spi-compiler:${Versions.spi_weaver}"
+    const val spi_weaver_runtime = "com.spirytusz:spi-runtime:${Versions.spi_weaver}"
 }
