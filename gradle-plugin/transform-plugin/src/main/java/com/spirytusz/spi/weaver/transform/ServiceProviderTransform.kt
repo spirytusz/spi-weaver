@@ -5,15 +5,13 @@ import com.android.build.api.transform.Transform
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.google.gson.GsonBuilder
-import com.spirytusz.spi.weaver.config.ConfigProvider
 import com.spirytusz.spi.weaver.log.Logger
+import com.spirytusz.spi.weaver.transform.global.TransformContext
 import com.spirytusz.spi.weaver.transform.scan.InputScanner
 import com.spirytusz.spi.weaver.transform.weave.CodeGenerator
-import org.gradle.api.Project
 
 class ServiceProviderTransform(
-    private val project: Project,
-    private val configProvider: ConfigProvider
+    private val transformContext: TransformContext
 ) : Transform() {
 
     companion object {
@@ -43,10 +41,11 @@ class ServiceProviderTransform(
             throw IllegalArgumentException("transformInvocation is null")
         }
 
+        val configProvider = transformContext.configProvider
         Logger.isDebuggable = configProvider.debuggable
         Logger.i(TAG) { "transform() >>> config=$configProvider" }
 
-        val inputScanner = InputScanner(project, configProvider)
+        val inputScanner = InputScanner(transformContext)
         inputScanner.onReceiveInput(transformInvocation)
         val serviceMapping = inputScanner.serviceMapping
         Logger.d(TAG) {

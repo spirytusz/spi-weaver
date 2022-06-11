@@ -13,6 +13,7 @@ object Versions {
     const val gson = "2.8.6"
     const val common_codec = "1.15"
     const val common_io = "2.6"
+    const val booster = "1.3.0"
 }
 
 object Dependencies {
@@ -32,4 +33,6 @@ object Dependencies {
     const val gson = "com.google.code.gson:gson:${Versions.gson}"
     const val common_codec = "commons-codec:commons-codec:${Versions.common_codec}"
     const val common_io = "commons-io:commons-io:${Versions.common_io}"
+    const val booster_annotation = "com.spirytusz:booster-annotation:${Versions.booster}"
+    const val booster_processor = "com.spirytusz:booster-processor:${Versions.booster}"
 }

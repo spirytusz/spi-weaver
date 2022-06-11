@@ -4,6 +4,7 @@ plugins {
     id("kotlin")
     id("java-gradle-plugin")
     id("maven-publish-plugin")
+    id("kotlin-kapt")
 }
 
 dependencies {
@@ -16,6 +17,8 @@ dependencies {
     implementation Dependencies.common_codec
     implementation Dependencies.common_io
     implementation project(":gradle-plugin:base-plugin")
+    implementation Dependencies.booster_annotation
+    kapt Dependencies.booster_processor
 }
 
 gradlePlugin {
@@ -27,9 +30,8 @@ gradlePlugin {
     }
 }
 
-java {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+kapt {
+    arguments {
+        arg("factory", "com.spirytusz.adapter.GeneratedTypeAdapterFactory")
+    }
 }
-
-group = "com.spirytusz"

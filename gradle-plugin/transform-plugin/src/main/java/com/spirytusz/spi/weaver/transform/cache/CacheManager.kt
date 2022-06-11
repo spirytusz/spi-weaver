@@ -1,19 +1,18 @@
 package com.spirytusz.spi.weaver.transform.cache
 
 import com.android.build.api.transform.TransformInvocation
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.spirytusz.spi.weaver.config.Caches.CACHE_FILE_NAME
 import com.spirytusz.spi.weaver.config.Caches.CACHE_FOLDER
 import com.spirytusz.spi.weaver.config.Caches.INTERMEDIATES
 import com.spirytusz.spi.weaver.log.Logger
 import com.spirytusz.spi.weaver.transform.data.Cache
+import com.spirytusz.spi.weaver.transform.data.CacheBundle
 import com.spirytusz.spi.weaver.transform.data.ServiceImplInfo
 import com.spirytusz.spi.weaver.transform.data.ServiceInfo
-import org.gradle.api.Project
+import com.spirytusz.spi.weaver.transform.global.TransformContext
 import java.io.File
 
-class CacheManager(private val project: Project) {
+class CacheManager(private val transformContext: TransformContext) {
 
     companion object {
         private const val TAG = "CacheHelper"
@@ -22,15 +21,13 @@ class CacheManager(private val project: Project) {
 
     private val cacheMapping: MutableMap<String, Cache> = mutableMapOf()
     private val cacheFile by lazy { getCacheJsonFile() }
-    private val gson = Gson()
 
     fun init(transformInvocation: TransformInvocation) {
         Logger.i(TAG) { "init() >>> isIncremental=${transformInvocation.isIncremental}" }
         if (transformInvocation.isIncremental) {
             val json = cacheFile.readText().ifEmpty { DEFAULT_CACHE }
-            val type = object : TypeToken<Map<String, Cache>>() {}.type
-            val cacheMapping = gson.fromJson<Map<String, Cache>>(json, type)
-            this.cacheMapping.putAll(cacheMapping)
+            val cacheBundle = transformContext.gson.fromJson(json, CacheBundle::class.java)
+            this.cacheMapping.putAll(cacheBundle.bundle)
         } else {
             cacheMapping.clear()
         }
@@ -73,13 +70,13 @@ class CacheManager(private val project: Project) {
     }
 
     fun apply() {
-        val json = gson.toJson(cacheMapping)
+        val json = transformContext.gson.toJson(cacheMapping)
         cacheFile.writeText(json)
         Logger.i(TAG) { "apply() >>> $json" }
     }
 
     private fun getCacheJsonFile(): File {
-        val intermediates = File(project.buildDir, INTERMEDIATES)
+        val intermediates = File(transformContext.project.buildDir, INTERMEDIATES)
         val cacheFolder = File(intermediates, CACHE_FOLDER)
         if (!cacheFolder.exists()) {
             cacheFolder.mkdir()

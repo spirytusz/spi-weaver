@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 import com.spirytusz.booster.annotation.Boost
 
 @Boost
-data class ServiceInfo(
-    @SerializedName("service_name")
-    val className: String = ""
+data class CacheBundle(
+    @SerializedName("bundle")
+    val bundle: Map<String, Cache> = mapOf()
 )
