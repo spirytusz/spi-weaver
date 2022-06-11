@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder
 import com.spirytusz.spi.weaver.log.Logger
 import com.spirytusz.spi.weaver.transform.global.TransformContext
 import com.spirytusz.spi.weaver.transform.scan.InputScanner
+import com.spirytusz.spi.weaver.transform.validate.ServiceImplConflictDetector
 import com.spirytusz.spi.weaver.transform.weave.CodeGenerator
 
 class ServiceProviderTransform(
@@ -48,6 +49,8 @@ class ServiceProviderTransform(
         val inputScanner = InputScanner(transformContext)
         inputScanner.onReceiveInput(transformInvocation)
         val serviceMapping = inputScanner.serviceMapping
+        val conflictDetector = ServiceImplConflictDetector(serviceMapping)
+        conflictDetector.checkOrThrow()
         Logger.d(TAG) {
             val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
             "serviceMapping: ${gson.toJson(serviceMapping)}"
