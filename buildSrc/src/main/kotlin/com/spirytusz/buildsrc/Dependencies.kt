@@ -14,7 +14,7 @@ object Versions {
     const val common_codec = "1.15"
     const val common_io = "2.6"
     const val booster = "1.3.1"
-    const val spi_weaver = "0.0.1"
+    const val spi_weaver = "0.0.2"
 }
 
 object Dependencies {

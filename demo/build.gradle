@@ -39,7 +39,6 @@ android {
 }
 
 spi {
-    debuggable true
     blackListClasses = ['^com/google', "^android", "^org/jetbrains", "^kotlin", "^java", "R\$|R\\\$[a-z]+"]
 }
 
