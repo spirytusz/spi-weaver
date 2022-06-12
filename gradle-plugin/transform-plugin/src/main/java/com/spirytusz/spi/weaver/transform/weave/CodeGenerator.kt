@@ -8,12 +8,14 @@ import com.spirytusz.spi.weaver.log.Logger
 import com.spirytusz.spi.weaver.transform.data.ServiceImplInfo
 import com.spirytusz.spi.weaver.transform.data.ServiceInfo
 import com.spirytusz.spi.weaver.transform.extensions.safelyWriteBytes
+import com.spirytusz.spi.weaver.transform.scan.ServiceInvalidationAwarer
 import org.apache.commons.codec.digest.DigestUtils
 import java.io.File
 
 class CodeGenerator(
     private val transformInvocation: TransformInvocation,
-    private val serviceMapping: Map<ServiceInfo, List<ServiceImplInfo>>
+    private val serviceMapping: Map<ServiceInfo, List<ServiceImplInfo>>,
+    private val invalidationAwarer: ServiceInvalidationAwarer
 ) {
 
     companion object {
@@ -22,15 +24,36 @@ class CodeGenerator(
 
     fun generate() {
         val generateStart = System.currentTimeMillis()
-        generateServiceImplCreators()
-        generateServiceRegistry()
+        val creatorNames = generateServiceImplCreators()
+        // 增量编译 且 没有任何关心的类被修改
+        val skipGenServiceRegistry = transformInvocation.isIncremental
+                && !invalidationAwarer.anyTargetClassInvalid
+        if (!skipGenServiceRegistry) {
+            generateServiceRegistry()
+        }
         val generateEnd = System.currentTimeMillis()
-        Logger.i(TAG) { "generate() >>> generate end, time cost: [${generateEnd - generateStart}ms]" }
+        Logger.i(TAG) {
+            val timeCost = generateEnd - generateStart
+            val summary = buildString {
+                append("\n\ttimeCost: [${timeCost}ms]")
+                append("\n\tneedGenServiceRegistry=${!skipGenServiceRegistry}")
+                if (creatorNames.isNotEmpty()) {
+                    val joinName = creatorNames.joinToString(separator = "\n\t\t") { it }
+                    append("\n\tneedGenCreatorNames=$joinName")
+                } else {
+                    append("\n\tcreatorNames no need gen")
+                }
+            }
+            "generate() >>> generate end, summary: $summary"
+        }
     }
 
-    private fun generateServiceImplCreators() {
-        serviceMapping.values.forEach { impls ->
-            impls.forEach { impl ->
+    private fun generateServiceImplCreators(): List<String> {
+        val incremental = transformInvocation.isIncremental
+        return serviceMapping.values.map { impls ->
+            impls.filter {
+                !incremental || invalidationAwarer.needReGenerate(it.className)
+            }.map { impl ->
                 val (creatorName, byteArray) = CallableClassByteCodeGenerator.generate(impl.className)
                 val dir = transformInvocation.outputProvider.getContentLocation(
                     DigestUtils.md5Hex(impl.toString()) + FileConst.CLASS_FILE_SUFFIX,
@@ -40,9 +63,9 @@ class CodeGenerator(
                 )
                 val file = File(dir, namingClassFile(creatorName))
                 file.safelyWriteBytes(byteArray)
-                Logger.i(TAG) { "generateServiceImplCreators() >>> write creator $creatorName to $file" }
+                creatorName
             }
-        }
+        }.flatten()
     }
 
     private fun generateServiceRegistry() {

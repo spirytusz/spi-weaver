@@ -13,7 +13,10 @@ import com.spirytusz.spi.weaver.transform.scan.directory.IncrementalDirectoryInp
 import com.spirytusz.spi.weaver.transform.scan.jar.FullJarInputScanner
 import com.spirytusz.spi.weaver.transform.scan.jar.IncrementalJarInputScanner
 
-class InputScanner(transformContext: TransformContext) : IInputScanner {
+class InputScanner(
+    transformContext: TransformContext,
+    serviceInvalidationAwarer: ServiceInvalidationAwarer
+) : IInputScanner {
 
     companion object {
         private const val TAG = "InputScanner"
@@ -21,7 +24,9 @@ class InputScanner(transformContext: TransformContext) : IInputScanner {
 
     private val targetClassCollector =
         TargetClassCollector(ClassFilter(transformContext.configProvider))
-    private val cacheHelper = CacheManager(transformContext)
+    private val cacheHelper = CacheManager(transformContext).also {
+        it.onInvalidateListener = serviceInvalidationAwarer
+    }
 
     private val jarInputScanner by lazy {
         InputScannerDispatcher(
