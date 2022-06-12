@@ -48,6 +48,7 @@ class IncrementalJarInputScanner(
             }
             Status.ADDED, Status.CHANGED -> {
                 scanSingleJarInput(jarInput)
+                srcFile.safelyCopyFile(dstFile)
             }
             Status.REMOVED -> {
                 dstFile.deleteOnExit()
@@ -57,8 +58,6 @@ class IncrementalJarInputScanner(
                 Logger.w(TAG) { "scanSingleJarInputIncrementally() >>> unknown status $status" }
             }
         }
-
-        srcFile.safelyCopyFile(dstFile)
     }
 
     private fun scanSingleJarInput(jarInput: JarInput) {
