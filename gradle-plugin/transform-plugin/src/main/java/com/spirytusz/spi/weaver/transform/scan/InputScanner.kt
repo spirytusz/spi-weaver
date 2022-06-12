@@ -15,7 +15,7 @@ import com.spirytusz.spi.weaver.transform.scan.jar.IncrementalJarInputScanner
 
 class InputScanner(
     transformContext: TransformContext,
-    serviceInvalidationAwarer: ServiceInvalidationAwarer
+    private val serviceInvalidationAwarer: ServiceInvalidationAwarer
 ) : IInputScanner {
 
     companion object {
@@ -67,7 +67,12 @@ class InputScanner(
         cacheHelper.apply()
 
         val scanEnd = System.currentTimeMillis()
-        Logger.i(TAG) { "onReceiveInput() >>> scan end, time cost: [${scanEnd - scanStart}ms]" }
+        Logger.i(TAG) {
+            "onReceiveInput() >>> scan end, summary:" +
+                    "\ntimeCost: [${scanEnd - scanStart}ms]" +
+                    "\nclasses:" +
+                    "\n${makeScanSummary(transformInvocation)}"
+        }
     }
 
     private fun mergeServiceMapping(): Map<ServiceInfo, List<ServiceImplInfo>> {
@@ -76,4 +81,25 @@ class InputScanner(
         result.putAll(directoryInputScanner.serviceMapping)
         return result.toMap()
     }
+
+    private fun makeScanSummary(transformInvocation: TransformInvocation) = buildString {
+        fun String.makePrefix(): String {
+            return if (!transformInvocation.isIncremental) {
+                "FULL"
+            } else if (serviceInvalidationAwarer.needReGenerate(this)) {
+                "CHANGED"
+            } else {
+                "DEFAULT"
+            }
+        }
+
+        serviceMapping.forEach { (service, impls) ->
+            val serviceName = service.className
+            append("\n\t[service] (${serviceName.makePrefix()})$serviceName")
+            impls.forEach { impl ->
+                val implName = impl.className
+                append("\n\t\t[impl] (${implName.makePrefix()}) alias: ${impl.alias} name: $implName")
+            }
+        }
+    }.removePrefix("\n")
 }

@@ -20,9 +20,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchLocation() {
-        val location = ServiceProvider.of("fused", ILocationService::class.java)
+        val networkLocation = ServiceProvider.of("coarse", ILocationService::class.java)
             ?.obtainSingleLocation()
-        binding.location = location.simpleInfo()
+        val gpsLocation = ServiceProvider.of("fine", ILocationService::class.java)
+            ?.obtainSingleLocation()
+        val fusedLocation = ServiceProvider.of("fused", ILocationService::class.java)
+            ?.obtainSingleLocation()
+        binding.location = buildString {
+            append("coarse: ${networkLocation.simpleInfo()}\n")
+            append("fine: ${gpsLocation.simpleInfo()}\n")
+            append("fused: ${fusedLocation.simpleInfo()}")
+        }
     }
 
     private fun Location?.simpleInfo(): String {

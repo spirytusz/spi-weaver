@@ -76,7 +76,7 @@ class CacheManager(private val transformContext: TransformContext) {
     fun apply() {
         val json = transformContext.gson.toJson(cacheMapping)
         cacheFile.writeText(json)
-        Logger.i(TAG) { "apply() >>> $json" }
+        Logger.d(TAG) { "apply() >>> $json" }
     }
 
     private fun getCacheJsonFile(): File {
