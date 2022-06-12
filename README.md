@@ -50,7 +50,7 @@ dependencies {
 }
 ```
 
-为服务接口加上**@Service**注解：
+为服务接口加上<b>@Service</b>注解：
 
 ```kotlin
 @Service
@@ -64,7 +64,7 @@ interface ILocationService {
 }
 ```
 
-并为服务实现类加上**@ServiceImpl**的注解：
+并为服务实现类加上<b>@ServiceImpl</b>的注解：
 
 ```kotlin
 @ServiceImpl
