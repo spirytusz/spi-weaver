@@ -22,6 +22,8 @@ class CacheManager(private val transformContext: TransformContext) {
     private val cacheMapping: MutableMap<String, Cache> = mutableMapOf()
     private val cacheFile by lazy { getCacheJsonFile() }
 
+    var onInvalidateListener: ((String, Cache) -> Unit)? = null
+
     fun init(transformInvocation: TransformInvocation) {
         Logger.i(TAG) { "init() >>> isIncremental=${transformInvocation.isIncremental}" }
         if (transformInvocation.isIncremental) {
@@ -66,13 +68,15 @@ class CacheManager(private val transformContext: TransformContext) {
 
     fun invalidateByPath(path: String) {
         Logger.i(TAG) { "invalidateByPath() >>> $path" }
-        cacheMapping.remove(path)
+        cacheMapping.remove(path)?.let { removed ->
+            onInvalidateListener?.invoke(path, removed)
+        }
     }
 
     fun apply() {
         val json = transformContext.gson.toJson(cacheMapping)
         cacheFile.writeText(json)
-        Logger.i(TAG) { "apply() >>> $json" }
+        Logger.d(TAG) { "apply() >>> $json" }
     }
 
     private fun getCacheJsonFile(): File {

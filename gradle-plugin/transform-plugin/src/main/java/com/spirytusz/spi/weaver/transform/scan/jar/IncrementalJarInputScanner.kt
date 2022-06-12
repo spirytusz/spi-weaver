@@ -48,6 +48,7 @@ class IncrementalJarInputScanner(
             }
             Status.ADDED, Status.CHANGED -> {
                 scanSingleJarInput(jarInput)
+                srcFile.safelyCopyFile(dstFile)
             }
             Status.REMOVED -> {
                 dstFile.deleteOnExit()
@@ -57,8 +58,6 @@ class IncrementalJarInputScanner(
                 Logger.w(TAG) { "scanSingleJarInputIncrementally() >>> unknown status $status" }
             }
         }
-
-        srcFile.safelyCopyFile(dstFile)
     }
 
     private fun scanSingleJarInput(jarInput: JarInput) {
@@ -67,11 +66,13 @@ class IncrementalJarInputScanner(
             when (it) {
                 is ServiceInfo -> {
                     Logger.d(TAG) { "scanSingleJarInputIncrementally() >>> find service ${it.className}" }
+                    cacheManager.invalidateByPath(path)
                     cacheManager.insertByPath(path, service = it)
                     serviceInfoList.add(it)
                 }
                 is ServiceImplInfo -> {
                     Logger.d(TAG) { "scanSingleJarInputIncrementally() >>> find service impl ${it.alias} ${it.className}" }
+                    cacheManager.invalidateByPath(path)
                     cacheManager.insertByPath(path, impl = it)
                     serviceImplInfoList.add(it)
                 }

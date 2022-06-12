@@ -13,7 +13,10 @@ import com.spirytusz.spi.weaver.transform.scan.directory.IncrementalDirectoryInp
 import com.spirytusz.spi.weaver.transform.scan.jar.FullJarInputScanner
 import com.spirytusz.spi.weaver.transform.scan.jar.IncrementalJarInputScanner
 
-class InputScanner(transformContext: TransformContext) : IInputScanner {
+class InputScanner(
+    transformContext: TransformContext,
+    private val serviceInvalidationAwarer: ServiceInvalidationAwarer
+) : IInputScanner {
 
     companion object {
         private const val TAG = "InputScanner"
@@ -21,7 +24,9 @@ class InputScanner(transformContext: TransformContext) : IInputScanner {
 
     private val targetClassCollector =
         TargetClassCollector(ClassFilter(transformContext.configProvider))
-    private val cacheHelper = CacheManager(transformContext)
+    private val cacheHelper = CacheManager(transformContext).also {
+        it.onInvalidateListener = serviceInvalidationAwarer
+    }
 
     private val jarInputScanner by lazy {
         InputScannerDispatcher(
@@ -62,7 +67,12 @@ class InputScanner(transformContext: TransformContext) : IInputScanner {
         cacheHelper.apply()
 
         val scanEnd = System.currentTimeMillis()
-        Logger.i(TAG) { "onReceiveInput() >>> scan end, time cost: [${scanEnd - scanStart}ms]" }
+        Logger.i(TAG) {
+            "onReceiveInput() >>> scan end, summary:" +
+                    "\ntimeCost: [${scanEnd - scanStart}ms]" +
+                    "\nclasses:" +
+                    "\n${makeScanSummary(transformInvocation)}"
+        }
     }
 
     private fun mergeServiceMapping(): Map<ServiceInfo, List<ServiceImplInfo>> {
@@ -71,4 +81,25 @@ class InputScanner(transformContext: TransformContext) : IInputScanner {
         result.putAll(directoryInputScanner.serviceMapping)
         return result.toMap()
     }
+
+    private fun makeScanSummary(transformInvocation: TransformInvocation) = buildString {
+        fun String.makePrefix(): String {
+            return if (!transformInvocation.isIncremental) {
+                "FULL"
+            } else if (serviceInvalidationAwarer.needReGenerate(this)) {
+                "CHANGED"
+            } else {
+                "DEFAULT"
+            }
+        }
+
+        serviceMapping.forEach { (service, impls) ->
+            val serviceName = service.className
+            append("\n\t[service] (${serviceName.makePrefix()})$serviceName")
+            impls.forEach { impl ->
+                val implName = impl.className
+                append("\n\t\t[impl] (${implName.makePrefix()}) alias: ${impl.alias} name: $implName")
+            }
+        }
+    }.removePrefix("\n")
 }

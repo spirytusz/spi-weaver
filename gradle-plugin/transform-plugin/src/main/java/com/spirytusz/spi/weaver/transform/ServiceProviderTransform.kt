@@ -8,6 +8,8 @@ import com.google.gson.GsonBuilder
 import com.spirytusz.spi.weaver.log.Logger
 import com.spirytusz.spi.weaver.transform.global.TransformContext
 import com.spirytusz.spi.weaver.transform.scan.InputScanner
+import com.spirytusz.spi.weaver.transform.scan.ServiceInvalidationAwarer
+import com.spirytusz.spi.weaver.transform.validate.ServiceImplConflictDetector
 import com.spirytusz.spi.weaver.transform.weave.CodeGenerator
 
 class ServiceProviderTransform(
@@ -45,14 +47,17 @@ class ServiceProviderTransform(
         Logger.isDebuggable = configProvider.debuggable
         Logger.i(TAG) { "transform() >>> config=$configProvider" }
 
-        val inputScanner = InputScanner(transformContext)
+        val invalidateAwarer = ServiceInvalidationAwarer()
+        val inputScanner = InputScanner(transformContext, invalidateAwarer)
         inputScanner.onReceiveInput(transformInvocation)
         val serviceMapping = inputScanner.serviceMapping
+        val conflictDetector = ServiceImplConflictDetector(serviceMapping)
+        conflictDetector.checkOrThrow()
         Logger.d(TAG) {
             val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
             "serviceMapping: ${gson.toJson(serviceMapping)}"
         }
-        CodeGenerator(transformInvocation, serviceMapping).generate()
+        CodeGenerator(transformInvocation, serviceMapping, invalidateAwarer).generate()
         val end = System.currentTimeMillis()
         Logger.i(TAG) { "transform time cost [${end - start}]ms" }
     }
