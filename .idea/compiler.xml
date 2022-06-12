@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="11">
+    <bytecodeTargetLevel target="1.8">
       <module name="spi-weaver-gradle-plugin.asm-factory-plugin" target="1.8" />
       <module name="spi-weaver-gradle-plugin.base-plugin" target="1.8" />
       <module name="spi-weaver-gradle-plugin.buildSrc" target="11" />
       <module name="spi-weaver-gradle-plugin.transform-plugin" target="1.8" />
       <module name="spi-weaver.app" target="11" />
+      <module name="spi-weaver.buildSrc" target="11" />
+      <module name="spi-weaver.buildSrc.main" target="11" />
+      <module name="spi-weaver.buildSrc.test" target="11" />
+      <module name="spi-weaver.demo" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>
